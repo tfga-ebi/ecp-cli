@@ -216,27 +216,37 @@ class ECP:
       # fallback to yaml as it is more readable by humans
       print(yaml.safe_dump(response.json(), indent=2, default_flow_style=False))
 
+
+PROD_URL = 'https://api.portal.tsi.ebi.ac.uk'
+DEV_URL  = 'https://dev.api.portal.tsi.ebi.ac.uk'
+
+
+def argParser():
+    
+    parser = argparse.ArgumentParser(description='EBI CLoud Portal CLI')
+    parser.add_argument('verb', help='Action to perform on resource, one of: get/create/delete/stop(deployments only)/login')
+    parser.add_argument('resource', nargs='?', help='Resource type to perform action on, one of: cred/param/config/app/deployment/logs/status')
+    parser.add_argument('name', nargs='?', help='Resource name to perform action on; can be omitted for \'get\' action to list all', default='')
+    parser.add_argument('--file', '-f', help='File containing JSON to post, use - for stdin')
+    parser.add_argument('--token', '-t', help='File containing JWT identity token, is sourced from ECP_TOKEN env var by default')
+    parser.add_argument('--json', '-j', help='Print raw JSON responses', action='store_true')
+    parser.add_argument('--dev', '-d', nargs='?', const=DEV_URL, default=PROD_URL, help='use dev portal url, https://dev.portal.tsi.ebi.ac.uk')
+    
+    arggroup = parser.add_argument_group('login', 'Arguments for \'login\' verb:')
+    arggroup.add_argument('--user', '-u', help='Username for local login action (implies -l)', default='')
+    arggroup.add_argument('--password', '-p', help='Password for local login action (implies -l)', default='')
+    arggroup.add_argument('--local', '-l', help='Use ecp local login', action='store_true')
+    arggroup.add_argument('--remove', '-r', help="Delete local token", action='store_true')
+    
+    return parser
+
+
 def main(argv):
-  parser = argparse.ArgumentParser(description='EBI CLoud Portal CLI')
-  parser.add_argument('verb', help='Action to perform on resource, one of: get/create/delete/stop(deployments only)/login')
-  parser.add_argument('resource', nargs='?', help='Resource type to perform action on, one of: cred/param/config/app/deployment/logs/status')
-  parser.add_argument('name', nargs='?', help='Resource name to perform action on; can be omitted for \'get\' action to list all', default='')
-  parser.add_argument('--file', '-f', help='File containing JSON to post, use - for stdin')
-  parser.add_argument('--token', '-t', help='File containing JWT identity token, is sourced from ECP_TOKEN env var by default')
-  parser.add_argument('--json', '-j', help='Print raw JSON responses', action='store_true')
-  parser.add_argument('--dev', '-d', help='use dev portal url, https://dev.portal.tsi.ebi.ac.uk', action='store_true')
+  parser = argParser()
 
-  arggroup = parser.add_argument_group('login', 'Arguments for \'login\' verb:')
-  arggroup.add_argument('--user', '-u', help='Username for local login action (implies -l)', default='')
-  arggroup.add_argument('--password', '-p', help='Password for local login action (implies -l)', default='')
-  arggroup.add_argument('--local', '-l', help='Use ecp local login', action='store_true')
-  arggroup.add_argument('--remove', '-r', help="Delete local token", action='store_true')
+  args=parser.parse_args(argv)
 
-  args=parser.parse_args()
-
-  baseurl = 'https://api.portal.tsi.ebi.ac.uk'
-  if args.dev:
-    baseurl = 'https://dev.api.portal.tsi.ebi.ac.uk'
+  baseurl = args.dev
 
   e = ECP(baseurl=baseurl)
 
@@ -294,4 +304,4 @@ def main(argv):
   e.print_request(r, args.verb, args.resource, args.json)
 
 if __name__ == "__main__":
-  main(sys.argv)
+  main(sys.argv[1:])

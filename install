@@ -1,0 +1,4 @@
+
+
+ln -sfv "$(absPath src/ecp.py)" ~/bin/ecp
+
